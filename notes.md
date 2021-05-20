@@ -124,15 +124,19 @@ psort arr = merge $ withSubArray arr f
       in promote $ combineArray a1 a2
 ```
 
+The `withSplitArray` function could easily be written in a way that fuses in the `combineArray` function (like, the consumer returns a pair of `(left,right)` arrays). I think that's basically the same, and maybe simpler, but I write things this way to make clear the stages a sub-array goes through.
+
 All of this can obviously be applied to data types other than arrays, for problems other than merge sort, and for splitting strategies other than simply dividing a structure in half. But we're still left with something a little bit awkward, in my opinion. 
 
 As language designers, can we formulate this in a way that doesn't require anything as complex as higher-rank types, and as something a bit more natural than the unwieldy `withSplitArray` combinator above? If we're not worried about being able to express this in Linear Haskell or whatever, and we can just design a language specifically to do this, would that be simpler/easier to understand?
 
 Beyond that, there's perhaps a bigger problem relating to expressivity. This pattern will work nicely for traditional fork-join parallelism, but (I think) handle other parallel programming techniques like futures. The `runST` trick limits us to only using the sub-arrays inside the lexical scope of the splitting---we can't (for example) return them from the function and combine them somewhere else.
 
-All of this so far would be doable in a theoretical version of Linear Haskell that actually worked well enough to write real programs in. Just implementing some common parallel programming patterns using this approach might make for a decent Haskell Symposium paper or workshop paper. If we had a really good implementation and evaluation (like, we built a compiler targeting C or LLVM and had benchmarks rivaling C++ performance) we could aim for PPoPP, but it'd maybe need a bit more. Since we're using linear types everywhere, if we could have the compiled parallel programs not need garbage collection, that would be a big plus for the PPoPP crowd. Also a plus if we could stage the computations to compile to specialized hardware (GPUs, FPGAs), which might not be that difficult.
+All of this so far would be doable in a theoretical version of Linear Haskell that actually worked well enough to write real programs in. 
 
-To do something more interesting from a PL perspective with this, and tying it even more to the work on *graded modal types*, it's maybe worth thinking about this problem completely differently. Instead of using a type system to enforce this protocol of splitting a value and combining it in the same way, we can think of different *permissions* that we might have to operate on values. If we can use permissions to distinguish between reads and writes to the same resource, can we use permissions to distinguish between reads and writes to distinct parts of the same resource?
+In fact, there is some [ongoing effort](https://github.com/tweag/linear-base/issues/312) (by Ed Kmett and others) to investigate doing something like this with linear arrays in Linear Haskell already. The main thrust of this seems to be tracking *ranges* within arrays, so it's not quite the same idea, though a few comments down in the issue there's a proposal to use left/right type-level tags similar to what I outlined above. So it's possible we'll get scooped on this, but also I feel pretty good that someone like Ed Kmett independently came up with this weird idea I've had in my head for a while, so maybe it's worth something. 
+
+To do something more interesting from a PL perspective with this, and tying it even more to the work on *graded modal types*, it's maybe worth thinking about this problem a bit differently. Instead of using a type system to enforce this protocol of splitting a value and combining it in the same way, we can think of different *permissions* that we might have to operate on values. If we can use permissions to distinguish between reads and writes to the same resource, can we use permissions to distinguish between reads and writes to distinct parts of the same resource? We could potentially have permissions to a range of indices, and so a solver would determine if any of the index accesses were overlapping and therefore violating the permissions. Or maybe we could encode the protocol of splitting/merging inside permissions, such that merging is guaranteed to be done correctly (slices of the same array are merged, and in the right order).
 
 ## Fractional permissions and independence
 
@@ -167,6 +171,31 @@ P == (e)P, (1-e)P
 
 Substructural rule, allows a permission to be split into two fractional permissions. Here `e` is some fraction between zero and one (exclusive). Writing is only allowed with `(1)P` permission. Reading is allowed at `(e)P` permission.
 
+In Granule, we can write programs that have a "grade" of `Unique` that guarantees there's only one, unique reference to that resource. This is essentially the `(1)P` permission. Here's an example of a Granule program that computes a dot product of two `FloatArray` values:
+
+```idris
+dotp' : FloatArray [Unique]
+     -> FloatArray [Unique]
+     -> Int [] -> Float
+     -> (Float, (FloatArray [Unique], FloatArray [Unique]))
+dotp' arr1 arr2 [0] v = (v,(arr1,arr2));
+dotp' arr1 arr2 [i] v =
+  let (e1,arr1') = (readFloatArray arr1 i);
+      (e2,arr2') = (readFloatArray arr2 i)
+  in dotp' arr1' arr2' [i - 1] (v + (e1 * e2))
+
+dotp : FloatArray [Unique]
+    -> FloatArray [Unique]
+    -> (Float, (FloatArray [Unique], FloatArray [Unique]))
+dotp arr1 arr2 = dotp' arr1 arr2 (lengthFloatArray arr1) 0.0
+```
+
+The `dotp` function returns a float (the product), and the original two arrays.
+
+This approach to mutable arrays is similar to what we might do in Linear Haskell, except we have this additional guarantee beyond just linearity for the arrays. 
+
+**TODO:** More explanation of the difference between plain linearity and uniqueness
+
 **TODO:** Continue explaining fractional permissions
 
 This gives us a way to show that a parallel evaluation `(s_1 || s_2)` will not race on any data, since the two statements cannot ever simultaneously write to (or write+read) the same resource. Already this seems like something that'd be interesting to do in the context of Granule. There are various other kinds of analyses that people have done with permissions systems.
@@ -175,7 +204,7 @@ Going even further, we can think about how to work at a granularity level finer 
 
 **TODO:** More speculation (examples?) for permissions on shared arrays
 
-## Uniqueness types
+## Uniqueness types and fusion
 
 **TODO:** Write this!
 
