@@ -1,11 +1,12 @@
-# Deterministic Parallel Programming with Graded Modal Types
+# Deterministic Parallel Programming with Mutable Arrays and Graded Modal Types
 
 I wrote that title because it sounds cool but I don't know if it's actually appropriate. This is a brainstorming document for a few related ideas about parallel programming with linear and modal types.
 
 The structure of this document so far is:
 
- 1. some exploration of "pure" parallel programming with mutable data using linear types, and
- 2. the beginnings of an idea for adapting prior work on DRF programming using "fractional permissions" to graded modal types
+ 1. some exploration of "pure" parallel programming with mutable data using linear types,
+ 2. the beginnings of an idea for adapting prior work on DRF programming using "fractional permissions" to graded modal types, and
+ 3. an exploration of how uniqueness types tie into this, and give us other nice properties wrt fusion.
 
 There's a bit of a narrative between the two relating to how we can split up "independent" work. First, according to the structure of data (writing to distinct parts of some mutable data), and second according to control flow (classifying data as writable or read-only at different points of a program's execution).
 
@@ -173,6 +174,10 @@ This gives us a way to show that a parallel evaluation `(s_1 || s_2)` will not r
 Going even further, we can think about how to work at a granularity level finer than whole resources. Can we extend this approach to reason about splitting up or otherwise using *distinct subsets* of a resource? For merge sort, we wanted to do `(sort left || sort right)` where left and right were sub-lists or sub-arrays (views). In the latter case, maybe what we want is a way to *break up write permissions for the left and right half of the array, and combine them when we're done*. So, we can split permissions on one axis for aliasing, and we can split permissions  on another axis based on the data's structure. Does that make any sense?s
 
 **TODO:** More speculation (examples?) for permissions on shared arrays
+
+## Uniqueness types
+
+**TODO:** Write this!
 
 ## Related papers
 

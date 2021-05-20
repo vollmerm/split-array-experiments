@@ -2,6 +2,13 @@
 
 ## Concrete tasks
 
+- [x] Create repo
+- [x] Update notes document with newer Linear Haskell syntax
+- [ ] Flesh out `SubArray` example a little more
+- [ ] Fill in `TODO` sections of fractional permissions section
+- [ ] Add some examples with Granule syntax and `[Unique]` types
+- [ ] Add section on fusion of unique arrays
+
 ### Array stuff in Linear Haskell
 
  - [ ] Implement a simple version of `SubArray` type from the notes.
