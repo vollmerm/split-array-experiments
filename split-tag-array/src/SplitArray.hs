@@ -24,15 +24,6 @@ data SubArray region (part :: ArrayPart) ty -- region is quantifier-bound, part 
                , root :: Lin.MArray ty
                }
 
-newSubArray :: forall ty r . Lin.MArray ty %1-> SubArray r 'W ty
-newSubArray arr = f $ Lin.length arr
-  where
-    f :: (Lin.MArray ty, Ur Int) %1-> SubArray r 'W ty
-    f (arr', Ur len) = MkSubArray undefined (0,len) arr'
-
-fromSubArray :: SubArray r 'W ty %1-> Lin.MArray ty
-fromSubArray = coerce root
-
 combineArray
     :: forall q a. -- only combine arrays in same region
        SubArray q 'L a -- left sub-array
@@ -41,7 +32,7 @@ combineArray
 combineArray = coerce combineArray'
   where
     combineArray' :: SubArray q 'L a -> SubArray q 'R a -> SubArray q 'W a
-    combineArray' arr1 _arr2 = parent arr1
+    combineArray' arr1 arr2 = arr1 `seq` parent arr2
 
 withSplitArray
     ::  forall q p a .
@@ -53,16 +44,16 @@ withSplitArray
    %1-> SubArray q p a
 withSplitArray arr f =
   (\(left,right,fun) -> f left right fun)
-  ((coerce (\arr' -> (unsafeSplitLeft arr',unsafeSplitRight arr',(\_ -> arr'))))  arr)
+  ((coerce (\arr' -> (unsafeSplitLeft arr',unsafeSplitRight arr',id)))  arr)
 
 unsafeSplitLeft :: SubArray r p t -> SubArray r 'L t
-unsafeSplitLeft sa = MkSubArray (coerce sa) (l,l+len) (root sa)
+unsafeSplitLeft sa = sa { range = (l,l+len), parent = coerce sa }
   where
     (l,r) = range sa
     len = ((r-l) `quot` 2) + ((r-l) `rem` 2)
 
 unsafeSplitRight :: SubArray r p t -> SubArray r 'R t
-unsafeSplitRight sa = MkSubArray (coerce sa) (r-len,r) (root sa)
+unsafeSplitRight sa = sa { range = (r-len,r), parent = coerce sa }
   where
     (l,r) = range sa
     len = (r-l) `quot` 2
@@ -74,6 +65,7 @@ length = coerce length'
     length' a = let (begin,end) = range a
                 in (a, Ur (end-begin+1))
 
+{-# NOINLINE write #-}
 write :: SubArray r p t %1-> (Int,t) %1-> SubArray r p t
 write = coerce write'
   where
@@ -93,3 +85,15 @@ read = coerce read'
       then let (root',v) = Lin.read (root a) (l+i) in (a {root = root'}, v)
       else error ("SplitArray.read: index out of bounts " ++ show i)
       where (l,r) = range a
+
+newSubArray :: forall ty r . Lin.MArray ty %1-> SubArray r 'W ty
+newSubArray arr = f $ Lin.length arr
+  where
+    f :: (Lin.MArray ty, Ur Int) %1-> SubArray r 'W ty
+    f (arr', Ur len) = mkSubArray undefined (0,len) arr'
+
+mkSubArray :: SubArray r 'W ty %1-> (Int,Int) %1-> Lin.MArray ty %1-> SubArray r 'W ty
+mkSubArray par ran r = MkSubArray par ran r
+
+rootSubArray :: SubArray r 'W ty %1-> Lin.MArray ty
+rootSubArray = coerce root

@@ -16,4 +16,7 @@ mksortarray :: Ord a => Int -> [(Int,a)] -> Array a
 mksortarray size pairs = unur $ newMArray size (\ma -> freeze $ sortArray $ foldl write ma pairs)
 
 testarray2 :: Array Int
-testarray2 = mksortarray 5 [(0,4),(1,5),(2,8),(3,1),(4,3),(5,2)]
+testarray2 = mksortarray 6 [(0,4),(1,5),(2,8),(3,1),(4,3),(5,2),(6,7)]
+
+testarray3 :: Array Int
+testarray3 = mksortarray 7 [(0,4),(1,5),(2,8),(3,1),(4,3),(5,2),(6,7),(7,6)]

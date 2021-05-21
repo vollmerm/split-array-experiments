@@ -33,6 +33,7 @@ length = coerce length'
     length' (MArray arr) =
       (MArray arr, Ur (snd (unsafePerformIO (MA.getBounds arr))))
 
+{-# NOINLINE write #-}
 write :: MArray a %1-> (Int,a) %1-> MArray a
 write = coerce write'
   where
