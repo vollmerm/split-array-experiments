@@ -13,7 +13,6 @@ module MergeSort where
 import SplitArray as A
 import LinearArray as Lin
 import Prelude.Linear
-import Debug.Trace
 
 sortArray :: Ord t => Lin.MArray t %1-> Lin.MArray t
 sortArray marr = rootSubArray $ mergeSort $ newSubArray marr
@@ -23,7 +22,7 @@ mergeSort arr = f $ A.length arr
   where
     f :: (SubArray r p t, Ur Int) %1-> SubArray r p t
     f (arr', Ur len) =
-      if (trace (show len) len) <= 2
+      if len <= 2
       then merge arr'
       else withSplitArray arr'
            (\left right promote ->
@@ -49,7 +48,7 @@ merge arr = f $ A.length arr
     innerLoop larr (Ur start) (Ur end) (Ur gap) (Ur i) =
       if (i+gap <= end)
       then innerLoop ((\(larr', Ur b) ->
-              if trace (show i ++ "," ++ show (i+gap) ++ ": " ++ show b) b
+              if b
               then swap larr' (Ur i) (Ur (i+gap))
               else larr') (comp larr (Ur i) (Ur (i+gap))))
            (Ur start) (Ur end) (Ur gap) (Ur (i+1))
