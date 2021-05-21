@@ -11,10 +11,10 @@
 
 ### Array stuff in Linear Haskell
 
- - [ ] Implement a simple version of `SubArray` type from the notes.
- - [ ] Implement `withSubArray` (splitting and ST-style tracking)
- - [ ] Implement some simple functions
-   - [ ] Merge sort
+ - [x] Implement a simple version of `SubArray` type from the notes.
+ - [x] Implement `withSubArray` (splitting and ST-style tracking)
+ - [x] Implement some simple functions
+   - [x] Merge sort
    - [ ] ...
  - [ ] Implement a split/merge strategy not using lexical scoping trick
  - [ ] (strecth) For comparison, implement a purely dynamically enforced version (run-time tag values)
