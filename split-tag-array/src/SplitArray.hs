@@ -6,14 +6,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 
 module SplitArray where
 import Prelude.Linear
 import LinearArray as Lin
 import Unsafe.Linear
-import Data.Proxy
 
 data ArrayPart
   = W -- whole
@@ -21,14 +19,17 @@ data ArrayPart
   | R -- right
 
 data SubArray region (part :: ArrayPart) ty -- region is quantifier-bound, part is ArrayPart
-  = MkSubArray { parent :: forall r q . SubArray r q ty
+  = MkSubArray { parent :: SubArray region 'W ty
                , range :: (Int,Int) -- range in root array
                , root :: Lin.MArray ty
                }
 
-newSubArray :: Proxy r -> Lin.MArray ty %1-> SubArray r 'W ty
-newSubArray _ arr = -- why doesn't linear haskell support let-binding yet?
+newSubArray :: Lin.MArray ty %1-> SubArray r 'W ty
+newSubArray arr = -- why doesn't linear haskell support let-binding yet?
   (\(arr',len) -> MkSubArray undefined (0,len) arr') (Lin.length arr)
+
+fromSubArray :: SubArray r 'W ty %1-> Lin.MArray ty
+fromSubArray = coerce root
 
 combineArray
     :: forall q a. -- only combine arrays in same region
@@ -53,10 +54,16 @@ withSplitArray arr f =
   ((coerce (\arr' -> (unsafeSplitLeft arr',unsafeSplitRight arr',(\_ -> arr'))))  arr)
 
 unsafeSplitLeft :: SubArray r p t -> SubArray r 'L t
-unsafeSplitLeft = undefined
+unsafeSplitLeft sa = MkSubArray (coerce sa) (l,l+len) (root sa)
+  where
+    (l,r) = range sa
+    len = ((r-l) `quot` 2) + ((r-l) `rem` 2)
 
 unsafeSplitRight :: SubArray r p t -> SubArray r 'R t
-unsafeSplitRight = undefined
+unsafeSplitRight sa = MkSubArray (coerce sa) (r-len,r) (root sa)
+  where
+    (l,r) = range sa
+    len = (r-l) `quot` 2
 
 length :: SubArray r p t %1-> (SubArray r p t, Int)
 length = coerce length'
@@ -69,10 +76,18 @@ write :: SubArray r p t %1-> (Int,t) %1-> SubArray r p t
 write = coerce write'
   where
     write' :: SubArray r p t -> (Int,t) -> SubArray r p t
-    write' a (i,v) = undefined
+    write' a (i,v) =
+      if i < (r-l)
+      then a { root = Lin.write (root a) (l+i,v) }
+      else error ("SplitArray.write: index out of bounts " ++ show i)
+      where (l,r) = range a
 
 read :: SubArray r p t %1-> Int -> (SubArray r p t, Ur t)
 read = coerce read'
   where
     read' :: SubArray r p t -> Int -> (SubArray r p t, Ur t)
-    read' a i = undefined
+    read' a i =
+      if i < (r-l)
+      then let (root',v) = Lin.read (root a) (l+i) in (a {root = root'}, v)
+      else error ("SplitArray.read: index out of bounts " ++ show i)
+      where (l,r) = range a

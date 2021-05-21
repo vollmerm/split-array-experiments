@@ -1,12 +1,11 @@
 {-# LANGUAGE LinearTypes #-}
 {-# LANGUAGE GADTs       #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds   #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 
 module LinearArray where
