@@ -72,14 +72,14 @@ length = coerce length'
   where
     length' :: SubArray r p t -> (SubArray r p t, Ur Int)
     length' a = let (begin,end) = range a
-                in (a, Ur (end-begin))
+                in (a, Ur (end-begin+1))
 
 write :: SubArray r p t %1-> (Int,t) %1-> SubArray r p t
 write = coerce write'
   where
     write' :: SubArray r p t -> (Int,t) -> SubArray r p t
     write' a (i,v) =
-      if i < (r-l)
+      if i <= (r-l)
       then a { root = Lin.write (root a) (l+i,v) }
       else error ("SplitArray.write: index out of bounts " ++ show i)
       where (l,r) = range a
@@ -89,7 +89,7 @@ read = coerce read'
   where
     read' :: SubArray r p t -> Int -> (SubArray r p t, Ur t)
     read' a i =
-      if i < (r-l)
+      if i <= (r-l)
       then let (root',v) = Lin.read (root a) (l+i) in (a {root = root'}, v)
       else error ("SplitArray.read: index out of bounts " ++ show i)
       where (l,r) = range a

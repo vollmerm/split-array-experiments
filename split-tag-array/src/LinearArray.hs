@@ -20,6 +20,9 @@ import Control.Monad
 newtype Array  a = Array  (A.Array    Int a)
 newtype MArray a = MArray (MA.IOArray Int a)
 
+instance Show a => Show (Array a) where
+  show (Array arr) = show arr
+
 newMArray :: Int -> (MArray a %1-> Ur b) %1-> Ur b
 newMArray i f = f (MArray (unsafePerformIO (MA.newArray_ (0,i))))
 

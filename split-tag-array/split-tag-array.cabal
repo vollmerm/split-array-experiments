@@ -30,6 +30,7 @@ library
       LinearArray
       SplitArray
       MergeSort
+      Example
   other-modules:
       Paths_split_tag_array
   hs-source-dirs:
