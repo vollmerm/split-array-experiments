@@ -23,12 +23,12 @@ newtype MArray a = MArray (MA.IOArray Int a)
 newMArray :: Int -> (MArray a %1-> Ur b) %1-> Ur b
 newMArray i f = f (MArray (unsafePerformIO (MA.newArray_ (0,i))))
 
-length :: MArray a %1-> (MArray a, Int)
+length :: MArray a %1-> (MArray a, Ur Int)
 length = coerce length'
   where
-    length' :: MArray a -> (MArray a, Int)
+    length' :: MArray a -> (MArray a, Ur Int)
     length' (MArray arr) =
-      (MArray arr, snd (unsafePerformIO (MA.getBounds arr)))
+      (MArray arr, Ur (snd (unsafePerformIO (MA.getBounds arr))))
 
 write :: MArray a %1-> (Int,a) %1-> MArray a
 write = coerce write'

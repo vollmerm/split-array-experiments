@@ -24,9 +24,11 @@ data SubArray region (part :: ArrayPart) ty -- region is quantifier-bound, part 
                , root :: Lin.MArray ty
                }
 
-newSubArray :: Lin.MArray ty %1-> SubArray r 'W ty
-newSubArray arr = -- why doesn't linear haskell support let-binding yet?
-  (\(arr',len) -> MkSubArray undefined (0,len) arr') (Lin.length arr)
+newSubArray :: forall ty r . Lin.MArray ty %1-> SubArray r 'W ty
+newSubArray arr = f $ Lin.length arr
+  where
+    f :: (Lin.MArray ty, Ur Int) %1-> SubArray r 'W ty
+    f (arr', Ur len) = MkSubArray undefined (0,len) arr'
 
 fromSubArray :: SubArray r 'W ty %1-> Lin.MArray ty
 fromSubArray = coerce root
@@ -65,12 +67,12 @@ unsafeSplitRight sa = MkSubArray (coerce sa) (r-len,r) (root sa)
     (l,r) = range sa
     len = (r-l) `quot` 2
 
-length :: SubArray r p t %1-> (SubArray r p t, Int)
+length :: SubArray r p t %1-> (SubArray r p t, Ur Int)
 length = coerce length'
   where
-    length' :: SubArray r p t -> (SubArray r p t, Int)
+    length' :: SubArray r p t -> (SubArray r p t, Ur Int)
     length' a = let (begin,end) = range a
-                in (a,end-begin)
+                in (a, Ur (end-begin))
 
 write :: SubArray r p t %1-> (Int,t) %1-> SubArray r p t
 write = coerce write'
